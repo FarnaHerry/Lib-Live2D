@@ -1,5 +1,7 @@
 # HuxerUI Live2D
 
+This downstream fork uses `farna/main` as its integration branch. The initial runtime matches the official `936694b` baseline without additional runtime changes. The official baseline is tracked through `upstream/main` from `HuxerUI/Lib-Live2D`. Consumers should pin a validated commit; the Cubism SDK remains an external local prerequisite and is not redistributed by this fork.
+
 Display and animate Live2D characters in a HuxerUI application. Load a Cubism `.model3.json` package, place a `ModelView` in your layout, and control motions and expressions through a `ModelController`.
 
 The library supports independent character instances, motion playback, expressions, automatic blinking and breathing, physics and pose updates, parameter overrides, hit areas, and pause/resume. It integrates with normal HuxerUI sizing, clipping, transforms, and opacity.
