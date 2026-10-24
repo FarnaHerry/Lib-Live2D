@@ -8,6 +8,13 @@ if (FRAMEWORK_SOURCE STREQUAL "D3D11")
 elseif (ANDROID)
     set(_live2d_shader_directory "${_live2d_shader_root}/StandardES")
     set(_live2d_shader_prefix "")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Linux 桌面走 ES 上下文（GDK GLES，与 Cubism GLES2 渲染器的顶点语义
+    # 一致）；桌面 GLSL 1.20 的 Standard 变体在 ES 路径下会让 Mesa 链接器
+    # 崩溃（cross_validate_globals，26.2.4 实测）——与 Android 同用
+    # GLSL ES 1.00 变体。前缀保持 FrameworkShaders/：框架的
+    # CSM_TARGET_LINUX_GL 分支按它请求着色器。
+    set(_live2d_shader_directory "${_live2d_shader_root}/StandardES")
 else ()
     set(_live2d_shader_directory "${_live2d_shader_root}/Standard")
 endif ()

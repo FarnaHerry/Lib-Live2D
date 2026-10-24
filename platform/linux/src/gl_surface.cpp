@@ -19,8 +19,13 @@ public:
     GError* error = nullptr;
     context = gdk_display_create_gl_context(display, &error);
     if (context) {
-      gdk_gl_context_set_use_es(context, false);
-      gdk_gl_context_set_required_version(context, 3, 2);
+      // Cubism 的 GLES2 渲染器按 ES 语义驱动顶点状态；桌面 GL core profile
+      // 下其顶点组合非法（Mesa iris 在驱动线程批处理时段错误）。要 ES 3.0
+      // 上下文：内嵌着色器是 GLSL ES 1.00（StandardES，见
+      // cmake/EmbeddedShaders.cmake），ES3 对 VAO 与 ES 1.00 着色器都合法；
+      // ES2 缺 VAO/GL_RGBA8，与实现不匹配。
+      gdk_gl_context_set_use_es(context, true);
+      gdk_gl_context_set_required_version(context, 3, 0);
     }
     if (!context || !gdk_gl_context_realize(context, &error)) {
       const std::string message = error ? error->message : "Cannot create a GDK GL context";
@@ -39,8 +44,15 @@ public:
     if (previous_) g_object_ref(previous_);
     gdk_gl_context_make_current(context.context);
     if (gdk_gl_context_get_current() != context.context) throw std::runtime_error("Cannot make GDK GL context current");
+    // GLEW 在 Wayland 等 GLX 缺席的会话返回 NO_GLX_DISPLAY，但它只是
+    // 没法建 GLX 扩展表；Cubism 渲染器直接调用链接期解析的 GL 核心符号
+    // （桌面 libGL 3.2+ 全部导出），不经过 GLEW 函数表——该错误可容忍。
+    // 其余失败仍视为不可用。
     glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) throw std::runtime_error("Cannot initialize OpenGL functions");
+    const GLenum glew = glewInit();
+    if (glew != GLEW_OK && glew != GLEW_ERROR_NO_GLX_DISPLAY) {
+      throw std::runtime_error("Cannot initialize OpenGL functions");
+    }
     while (glGetError() != GL_NO_ERROR) {}
   }
   ~CurrentContext() {
@@ -114,11 +126,28 @@ public:
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       glClearColor(0, 0, 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
+      // 诊断：清掉历史错误，分段定位 0x502 的来源（我们的调用 vs DrawModel）。
+      while (glGetError() != GL_NO_ERROR) {}
       auto projection = model.Projection();
       auto* renderer = model.GetRenderer<Renderer>();
       renderer->SetMvpMatrix(&projection);
+      const GLenum preDraw = glGetError();
       renderer->DrawModel();
-      if (glGetError() != GL_NO_ERROR) return {PlaybackErrorCode::BackendFailed, "OpenGL rendering failed"};
+      const GLenum drawError = glGetError();
+      if (preDraw != GL_NO_ERROR || drawError != GL_NO_ERROR) {
+        return {PlaybackErrorCode::BackendFailed,
+                "OpenGL rendering failed (pre=0x" +
+                    [&] {
+                      char buffer[16];
+                      std::snprintf(buffer, sizeof(buffer), "%X", preDraw);
+                      return std::string(buffer);
+                    }() + ", draw=0x" +
+                    [&] {
+                      char buffer[16];
+                      std::snprintf(buffer, sizeof(buffer), "%X", drawError);
+                      return std::string(buffer);
+                    }() + ")"};
+      }
       mailbox_->PublishCurrent({.texture_name = target_, .pixel_width = width, .pixel_height = height,
                                 .origin = Mailbox::Origin::BottomLeft, .alpha = Mailbox::Alpha::Premultiplied});
       return {};
