@@ -15,7 +15,7 @@ This is an early implementation. The preview includes three official sample char
 | Web | Cubism Web / WebGL / VideoFrame | Built; three-character display, switching, expressions, and responsive layout checked in a browser |
 | iOS arm64 Simulator | Metal | Built and launched; Mao orientation checked in a simulator screenshot; switching/input checks pending |
 | Windows | D3D11 | Implemented; build and runtime checks pending |
-| Linux x86_64 | OpenGL / GDK | Implemented; build and runtime checks pending |
+| Linux x86_64 | OpenGL ES 3.1 / GDK | Build and first-frame `Ready` checked; visual and input checks pending |
 
 See [validation records](tests/README.md) for exact coverage. Older Apple OS compatibility is not established for the pinned Core binaries; see [SDK compatibility](docs/cubism-sdk.md#toolchains-and-compatibility).
 
@@ -27,7 +27,7 @@ See [validation records](tests/README.md) for exact coverage. Older Apple OS com
 - Cubism Native and/or Web 5 R5 (`5-r.5`).
 - A model package you have permission to use, including its `.model3.json` and every referenced dependency.
 
-Android builds use JDK 17. Apple builds require Xcode with the Metal compiler. Linux integration requires GTK 4.6+ and GLEW. Web builds also require Node.js, npm, Emscripten, and browser support for `VideoFrame`.
+Android builds use JDK 17. Apple builds require Xcode with the Metal compiler. Linux integration requires GTK 4.6+, GLEW, OpenGL, and the `patch` utility. The Linux build applies the GLES 3 VBO compatibility patch to the downloaded Cubism Native SDK cache so its renderer works with HuxerUI's OpenGL ES 3.1 texture contract. Web builds also require Node.js, npm, Emscripten, and browser support for `VideoFrame`.
 
 ## Try the preview
 

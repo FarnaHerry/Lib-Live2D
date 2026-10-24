@@ -70,6 +70,12 @@ The fixes included embedded official OpenGL shaders with lifetime-stable Cubism 
 
 The initial run did not optimize first-time shader compilation or per-frame storage-allocation cost. Background preparation was added later, as recorded below. Long-running memory pressure and complex blend models remain outside the verified scope.
 
+## Linux OpenGL ES
+
+On 2026-10-24, the llm-switch consumer was built on Linux with HuxerUI 0.3.0 and Cubism Native 5 R5. The Linux GDK context requests OpenGL ES 3.1, matching HuxerUI's `GL_RGBA8` external-texture contract. A Linux-only patch is applied to the extracted SDK cache at configure time: model vertex/index data and offscreen quad data are uploaded to VBO/EBO buffers instead of using client-side arrays, which ES 3 rejects. The wrapper also links the OpenGL library explicitly.
+
+The full `LLMSWITCH_LIVE2D=ON` application build passed, as did all nine llm-switch CTest targets. The application was launched with an isolated data directory and the Live2D pet enabled; `ModelEvents::Ready` was observed within 16 seconds, with no playback failure diagnostic. This verifies successful first-frame rendering on the host. No screenshot, pixel comparison, transparency-edge check, or hit-area input check was performed.
+
 ## Other platforms
 
 iOS arm64 Simulator builds passed, including Core and shader packaging. The later orientation check is recorded below; broader runtime and input checks remain pending. Windows and Linux have no corresponding host builds or runtime checks. Refer to the [user guide](../README.md) and [SDK notes](../docs/cubism-sdk.md) for platform and toolchain constraints.

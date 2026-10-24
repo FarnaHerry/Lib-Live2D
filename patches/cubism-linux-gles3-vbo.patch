@@ -1,0 +1,168 @@
+--- a/Framework/src/Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp
++++ b/Framework/src/Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp
+@@ -35,0 +36,4 @@
++#endif
++
++#ifdef CSM_TARGET_LINUX_GL
++#include <vector>
+@@ -516,0 +521,5 @@
++#ifdef CSM_TARGET_LINUX_GL
++    void UploadVertexBuffer(const csmFloat32* vertexArray, const csmFloat32* uvArray, csmUint32 vertexCount);
++    void UploadIndexBuffer(const csmUint16* indexArray, csmUint32 indexCount);
++#endif
++
+@@ -548,0 +558,6 @@
++#ifdef CSM_TARGET_LINUX_GL
++    GLuint _vertexBuffer;
++    GLuint _indexBuffer;
++    std::vector<csmFloat32> _interleavedVertexData;
++#endif
++
+--- a/Framework/src/Rendering/OpenGL/CubismRenderer_OpenGLES2.cpp
++++ b/Framework/src/Rendering/OpenGL/CubismRenderer_OpenGLES2.cpp
+@@ -488,0 +489,4 @@
++#ifdef CSM_TARGET_LINUX_GL
++    , _vertexBuffer(0)
++    , _indexBuffer(0)
++#endif
+@@ -495,0 +500,4 @@
++#ifdef CSM_TARGET_LINUX_GL
++    if (_vertexBuffer != 0) glDeleteBuffers(1, &_vertexBuffer);
++    if (_indexBuffer != 0) glDeleteBuffers(1, &_indexBuffer);
++#endif
+@@ -1113,0 +1122,39 @@
++#ifdef CSM_TARGET_LINUX_GL
++// LLMSWITCH_CUBISM_LINUX_GLES3_VBO_PATCH: stream model and quad data through buffers.
++void CubismRenderer_OpenGLES2::UploadVertexBuffer(const csmFloat32* vertexArray, const csmFloat32* uvArray, csmUint32 vertexCount)
++{
++    if (_vertexBuffer == 0)
++    {
++        glGenBuffers(1, &_vertexBuffer);
++    }
++
++    _interleavedVertexData.resize(static_cast<std::size_t>(vertexCount) * 4);
++    for (csmUint32 vertex = 0; vertex < vertexCount; ++vertex)
++    {
++        const std::size_t sourceOffset = static_cast<std::size_t>(vertex) * 2;
++        const std::size_t targetOffset = static_cast<std::size_t>(vertex) * 4;
++        _interleavedVertexData[targetOffset] = vertexArray[sourceOffset];
++        _interleavedVertexData[targetOffset + 1] = vertexArray[sourceOffset + 1];
++        _interleavedVertexData[targetOffset + 2] = uvArray[sourceOffset];
++        _interleavedVertexData[targetOffset + 3] = uvArray[sourceOffset + 1];
++    }
++
++    glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
++    glBufferData(GL_ARRAY_BUFFER,
++                 static_cast<GLsizeiptr>(_interleavedVertexData.size() * sizeof(csmFloat32)),
++                 _interleavedVertexData.data(), GL_STREAM_DRAW);
++}
++
++void CubismRenderer_OpenGLES2::UploadIndexBuffer(const csmUint16* indexArray, csmUint32 indexCount)
++{
++    if (_indexBuffer == 0)
++    {
++        glGenBuffers(1, &_indexBuffer);
++    }
++    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
++    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
++                 static_cast<GLsizeiptr>(static_cast<std::size_t>(indexCount) * sizeof(csmUint16)),
++                 indexArray, GL_STREAM_DRAW);
++}
++#endif
++
+@@ -1156,0 +1204,4 @@
++#ifdef CSM_TARGET_LINUX_GL
++        UploadIndexBuffer(indexArray, static_cast<csmUint32>(indexCount));
++        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, nullptr);
++#else
+@@ -1157,0 +1209 @@
++#endif
+@@ -1194,0 +1247,5 @@
++#ifdef CSM_TARGET_LINUX_GL
++    UploadIndexBuffer(ModelRenderTargetIndexArray,
++                      static_cast<csmUint32>(sizeof(ModelRenderTargetIndexArray) / sizeof(csmUint16)));
++    glDrawElements(GL_TRIANGLES, sizeof(ModelRenderTargetIndexArray) / sizeof(csmUint16), GL_UNSIGNED_SHORT, nullptr);
++#else
+@@ -1195,0 +1253 @@
++#endif
+@@ -1247,0 +1306,5 @@
++#ifdef CSM_TARGET_LINUX_GL
++    UploadIndexBuffer(ModelRenderTargetIndexArray,
++                      static_cast<csmUint32>(sizeof(ModelRenderTargetIndexArray) / sizeof(csmUint16)));
++    glDrawElements(GL_TRIANGLES, sizeof(ModelRenderTargetIndexArray) / sizeof(csmUint16), GL_UNSIGNED_SHORT, nullptr);
++#else
+@@ -1248,0 +1312 @@
++#endif
+@@ -1357 +1421 @@
+-    CubismShader_OpenGLES2::GetInstance()->CopyTexture(srcBuffer.GetColorBuffer());
++    CubismShader_OpenGLES2::GetInstance()->CopyTexture(this, srcBuffer.GetColorBuffer());
+--- a/Framework/src/Rendering/OpenGL/CubismShader_OpenGLES2.hpp
++++ b/Framework/src/Rendering/OpenGL/CubismShader_OpenGLES2.hpp
+@@ -118,0 +119 @@
++        CubismRenderer_OpenGLES2* renderer,
+@@ -289 +290 @@
+-    void SetVertexAttributes(const CubismModel& model, const csmInt32 index, CubismShaderSet* shaderSet);
++    void SetVertexAttributes(CubismRenderer_OpenGLES2* renderer, const CubismModel& model, const csmInt32 index, CubismShaderSet* shaderSet);
+--- a/Framework/src/Rendering/OpenGL/CubismShader_OpenGLES2.cpp
++++ b/Framework/src/Rendering/OpenGL/CubismShader_OpenGLES2.cpp
+@@ -608 +608 @@
+-    SetVertexAttributes(model, index, shaderSet);
++    SetVertexAttributes(renderer, model, index, shaderSet);
+@@ -681 +681 @@
+-    SetVertexAttributes(model, index, shaderSet);
++    SetVertexAttributes(renderer, model, index, shaderSet);
+@@ -704,5 +704,8 @@
+-    CopyTexture(texture, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, baseColor);
+-}
+-
+-void CubismShader_OpenGLES2::CopyTexture(GLint texture, csmInt32 srcColor, csmInt32 dstColor, csmInt32 srcAlpha, csmInt32 dstAlpha, CubismRenderer::CubismTextureColor baseColor)
+-{
++    CopyTexture(renderer, texture, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, baseColor);
++}
++
++void CubismShader_OpenGLES2::CopyTexture(CubismRenderer_OpenGLES2* renderer, GLint texture, csmInt32 srcColor, csmInt32 dstColor, csmInt32 srcAlpha, csmInt32 dstAlpha, CubismRenderer::CubismTextureColor baseColor)
++{
++#ifndef CSM_TARGET_LINUX_GL
++    static_cast<void>(renderer);
++#endif
+@@ -717,0 +721,8 @@
++#ifdef CSM_TARGET_LINUX_GL
++    // LLMSWITCH_CUBISM_LINUX_GLES3_VBO_PATCH: no client-side attributes on ES 3.
++    renderer->UploadVertexBuffer(renderTargetVertexArray, renderTargetUvArray, 4);
++    glEnableVertexAttribArray(shaderSet->AttributePositionLocation);
++    glVertexAttribPointer(shaderSet->AttributePositionLocation, 2, GL_FLOAT, GL_FALSE, sizeof(csmFloat32) * 4, nullptr);
++    glEnableVertexAttribArray(shaderSet->AttributeTexCoordLocation);
++    glVertexAttribPointer(shaderSet->AttributeTexCoordLocation, 2, GL_FLOAT, GL_FALSE, sizeof(csmFloat32) * 4, reinterpret_cast<const void*>(sizeof(csmFloat32) * 2));
++#else
+@@ -720,2 +730,0 @@
+-
+-    // テクスチャ座標属性の設定
+@@ -723,0 +733 @@
++#endif
+@@ -797,0 +808,7 @@
++#ifdef CSM_TARGET_LINUX_GL
++    renderer->UploadVertexBuffer(renderTargetVertexArray, renderTargetReverseUvArray, 4);
++    glEnableVertexAttribArray(shaderSet->AttributePositionLocation);
++    glVertexAttribPointer(shaderSet->AttributePositionLocation, 2, GL_FLOAT, GL_FALSE, sizeof(csmFloat32) * 4, nullptr);
++    glEnableVertexAttribArray(shaderSet->AttributeTexCoordLocation);
++    glVertexAttribPointer(shaderSet->AttributeTexCoordLocation, 2, GL_FLOAT, GL_FALSE, sizeof(csmFloat32) * 4, reinterpret_cast<const void*>(sizeof(csmFloat32) * 2));
++#else
+@@ -800,2 +816,0 @@
+-
+-    // テクスチャ座標属性の設定
+@@ -803,0 +819 @@
++#endif
+@@ -1080 +1096 @@
+-void CubismShader_OpenGLES2::SetVertexAttributes(const CubismModel& model, const csmInt32 index, CubismShaderSet* shaderSet)
++void CubismShader_OpenGLES2::SetVertexAttributes(CubismRenderer_OpenGLES2* renderer, const CubismModel& model, const csmInt32 index, CubismShaderSet* shaderSet)
+@@ -1083,0 +1100,8 @@
++#ifdef CSM_TARGET_LINUX_GL
++    const csmFloat32* uvArray = reinterpret_cast<const csmFloat32*>(model.GetDrawableVertexUvs(index));
++    renderer->UploadVertexBuffer(vertexArray, uvArray, static_cast<csmUint32>(model.GetDrawableVertexCount(index)));
++    glEnableVertexAttribArray(shaderSet->AttributePositionLocation);
++    glVertexAttribPointer(shaderSet->AttributePositionLocation, 2, GL_FLOAT, GL_FALSE, sizeof(csmFloat32) * 4, nullptr);
++    glEnableVertexAttribArray(shaderSet->AttributeTexCoordLocation);
++    glVertexAttribPointer(shaderSet->AttributeTexCoordLocation, 2, GL_FLOAT, GL_FALSE, sizeof(csmFloat32) * 4, reinterpret_cast<const void*>(sizeof(csmFloat32) * 2));
++#else
+@@ -1090,0 +1115 @@
++#endif

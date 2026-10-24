@@ -19,13 +19,11 @@ public:
     GError* error = nullptr;
     context = gdk_display_create_gl_context(display, &error);
     if (context) {
-      // Cubism 的 GLES2 渲染器按 ES 语义驱动顶点状态；桌面 GL core profile
-      // 下其顶点组合非法（Mesa iris 在驱动线程批处理时段错误）。要 ES 3.0
-      // 上下文：内嵌着色器是 GLSL ES 1.00（StandardES，见
-      // cmake/EmbeddedShaders.cmake），ES3 对 VAO 与 ES 1.00 着色器都合法；
-      // ES2 缺 VAO/GL_RGBA8，与实现不匹配。
+      // HuxerUI GlTexture requires ES 3.1+ and GL_RGBA8 storage. The Linux
+      // Cubism framework is patched to upload all mesh and quad data to VBOs,
+      // since ES 3 forbids the client-side arrays used by its GLES2 renderer.
       gdk_gl_context_set_use_es(context, true);
-      gdk_gl_context_set_required_version(context, 3, 0);
+      gdk_gl_context_set_required_version(context, 3, 1);
     }
     if (!context || !gdk_gl_context_realize(context, &error)) {
       const std::string message = error ? error->message : "Cannot create a GDK GL context";

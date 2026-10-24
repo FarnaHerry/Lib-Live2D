@@ -53,7 +53,7 @@ The following are local observations from 2026-09-10, not general platform guara
 - The installed HuxerUI Web library directory is named `emscripten-4.0.19`. Linking with an official Emscripten 4.0.19 installation failed with a missing `std::__2::__hash_memory` symbol. Emscripten 6.0.5 built and ran the preview successfully. Check the actual SDK/toolchain pairing rather than choosing solely by directory name. No global shell configuration or HuxerUI SDK files were changed.
 - `xcrun otool -l` reports deployment markers of macOS 15.7 for the arm64 Native Core and iOS 26.2 for its arm64 device and Simulator slices. The generated application still has lower deployment targets, so linking emits warnings. Those markers do not establish a tested minimum OS. Older OS compatibility and a possible earlier Core baseline remain unresolved.
 - The archive release name is 5 R5; the loaded Native Core reports version 6.0.1. Treat the bundled binaries and their metadata as authoritative rather than inferring a Core version from the archive name.
-- Windows and Linux still require builds and runtime validation on suitable hosts or CI.
+- Windows still requires a build and runtime validation on a suitable host or CI. Linux x86_64 build and first-frame rendering are recorded in [validation records](../tests/README.md#linux-opengl-es); visual and input checks remain pending.
 
 First-time Android shader preparation can be slow even though it now runs outside the UI thread. Texture upload and the first draw still have synchronous costs. See [loading validation](../tests/README.md#loading-responsiveness) for measurements and limits.
 

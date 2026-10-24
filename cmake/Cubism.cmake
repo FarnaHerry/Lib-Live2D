@@ -54,6 +54,48 @@ if (NOT EXISTS "${_live2d_core}")
     message(FATAL_ERROR "Cubism 5 R5 does not provide the selected Core slice: ${_live2d_core}")
 endif ()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_program(_live2d_patch_command patch)
+    if (NOT _live2d_patch_command)
+        message(FATAL_ERROR "The Linux Cubism renderer patch requires the 'patch' command")
+    endif ()
+
+    set(_live2d_renderer_cpp
+            "${LIVE2D_CUBISM_NATIVE_ROOT}/Framework/src/Rendering/OpenGL/CubismRenderer_OpenGLES2.cpp")
+    set(_live2d_shader_cpp
+            "${LIVE2D_CUBISM_NATIVE_ROOT}/Framework/src/Rendering/OpenGL/CubismShader_OpenGLES2.cpp")
+    file(READ "${_live2d_renderer_cpp}" _live2d_renderer_source)
+    file(READ "${_live2d_shader_cpp}" _live2d_shader_source)
+    string(FIND "${_live2d_renderer_source}"
+            "LLMSWITCH_CUBISM_LINUX_GLES3_VBO_PATCH" _live2d_renderer_patch_marker)
+    string(FIND "${_live2d_shader_source}"
+            "LLMSWITCH_CUBISM_LINUX_GLES3_VBO_PATCH" _live2d_shader_patch_marker)
+    if (_live2d_renderer_patch_marker EQUAL -1 OR _live2d_shader_patch_marker EQUAL -1)
+        execute_process(
+                COMMAND "${_live2d_patch_command}" --batch --forward -p1
+                    -i "${CMAKE_CURRENT_LIST_DIR}/../patches/cubism-linux-gles3-vbo.patch"
+                WORKING_DIRECTORY "${LIVE2D_CUBISM_NATIVE_ROOT}"
+                RESULT_VARIABLE _live2d_patch_result
+                OUTPUT_VARIABLE _live2d_patch_stdout
+                ERROR_VARIABLE _live2d_patch_stderr)
+        if (NOT _live2d_patch_result EQUAL 0)
+            message(FATAL_ERROR
+                    "Could not apply the Linux Cubism GLES VBO patch. The SDK may have changed.\n"
+                    "stdout: ${_live2d_patch_stdout}\n"
+                    "stderr: ${_live2d_patch_stderr}")
+        endif ()
+        file(READ "${_live2d_renderer_cpp}" _live2d_renderer_source)
+        file(READ "${_live2d_shader_cpp}" _live2d_shader_source)
+        string(FIND "${_live2d_renderer_source}"
+                "LLMSWITCH_CUBISM_LINUX_GLES3_VBO_PATCH" _live2d_renderer_patch_marker)
+        string(FIND "${_live2d_shader_source}"
+                "LLMSWITCH_CUBISM_LINUX_GLES3_VBO_PATCH" _live2d_shader_patch_marker)
+        if (_live2d_renderer_patch_marker EQUAL -1 OR _live2d_shader_patch_marker EQUAL -1)
+            message(FATAL_ERROR "The Linux Cubism GLES VBO patch completed without its expected markers")
+        endif ()
+    endif ()
+endif ()
+
 add_library(live2d_cubism_core STATIC IMPORTED)
 set_target_properties(live2d_cubism_core PROPERTIES
         IMPORTED_LOCATION "${_live2d_core}"
@@ -88,10 +130,11 @@ elseif (ANDROID)
 elseif (WIN32)
     target_link_libraries(Framework PUBLIC d3d11 d3dcompiler dxgi)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(OpenGL REQUIRED)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(LIVE2D_GTK REQUIRED IMPORTED_TARGET "gtk4>=4.6")
     target_link_libraries(huxerui_live2d PRIVATE PkgConfig::LIVE2D_GTK)
-    target_link_libraries(Framework PUBLIC GLEW::GLEW)
+    target_link_libraries(Framework PUBLIC GLEW::GLEW OpenGL::GL)
 endif ()
 
 target_link_libraries(huxerui_live2d PRIVATE Framework)
