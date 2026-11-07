@@ -179,7 +179,7 @@ public:
     co_await PrepareGlContextAsync(asset_->runtime);
 #endif
     std::lock_guard lock(CubismMutex());
-    surface_ = CreateNativeSurface(*asset_, *model_);
+    surface_ = CreatePlatformSurface(*asset_, *model_);
     co_return;
   }
   ~NativePlayer() override {
@@ -207,7 +207,7 @@ public:
 private:
   std::shared_ptr<const AssetData> asset_;
   std::unique_ptr<NativeModel> model_;
-  std::unique_ptr<NativeSurface> surface_;
+  std::unique_ptr<PlatformSurface> surface_;
 };
 
 } // namespace

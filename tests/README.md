@@ -110,11 +110,11 @@ macOS, Android, and Web builds passed, and the updated Android APK was installed
 
 ## macOS texture orientation
 
-The native macOS window initially displayed characters upside down. Temporary readback of the completed Metal render target showed Mao upright when pixels were read from the first row to the last. Publishing that source as `TopLeft` nevertheless produced an inverted native presentation.
+The macOS window initially displayed characters upside down. Temporary readback of the completed Metal render target showed Mao upright when pixels were read from the first row to the last. Publishing that source as `TopLeft` nevertheless produced an inverted macOS presentation.
 
 The macOS publication boundary now uses `BottomLeft` to compensate for the installed HuxerUI importer's behavior. Model projection, hit coordinates, and, at that stage, iOS's `TopLeft` setting were preserved. This is a compatibility workaround, not a claim that the source texture's first row is actually the bottom. Retest and consider removing it when updating the SDK.
 
-The repaired macOS build, Native Core/Metal integration test, and host-contract test passed. Computer-control permissions were unavailable, so the user checked the native window and confirmed Mao, Haru, and Hiyori were upright with working taps. Temporary readback code was removed; the production path gained no CPU pixel copy.
+The repaired macOS build, Native Core/Metal integration test, and host-contract test passed. Computer-control permissions were unavailable, so the user checked the macOS window and confirmed Mao, Haru, and Hiyori were upright with working taps. Temporary readback code was removed; the production path gained no CPU pixel copy.
 
 ## Independent platform backends
 

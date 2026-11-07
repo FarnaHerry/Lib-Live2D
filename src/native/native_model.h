@@ -39,9 +39,9 @@ private:
   bool evaluated_ = false;
 };
 
-class NativeSurface {
+class PlatformSurface {
 public:
-  virtual ~NativeSurface() = default;
+  virtual ~PlatformSurface() = default;
   virtual std::shared_ptr<ExternalTexture> Texture() const = 0;
   virtual PlaybackError Draw(NativeModel& model, Size pixels) = 0;
 };
@@ -50,6 +50,6 @@ public:
 Task<void> PrepareGlContextAsync(std::shared_ptr<void> runtime);
 #endif
 
-std::unique_ptr<NativeSurface> CreateNativeSurface(const AssetData& asset, NativeModel& model);
+std::unique_ptr<PlatformSurface> CreatePlatformSurface(const AssetData& asset, NativeModel& model);
 
 } // namespace huxerui::live2d::detail

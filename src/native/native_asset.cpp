@@ -157,16 +157,16 @@ Task<Result<ModelInfo, LoadError>> PrepareAssetAsync(AssetData& asset) {
     asset.images = co_await DecodeImagesAsync(asset);
     std::lock_guard lock(CubismMutex());
     NativeModel model(asset);
-    auto* native = model.GetModel();
+    auto* core_model = model.GetModel();
     ModelInfo info;
-    info.canvas = {native->GetCanvasWidthPixel(), native->GetCanvasHeightPixel()};
-    if (!(info.canvas.width > 0 && info.canvas.height > 0) || native->GetDrawableCount() > 100000) {
+    info.canvas = {core_model->GetCanvasWidthPixel(), core_model->GetCanvasHeightPixel()};
+    if (!(info.canvas.width > 0 && info.canvas.height > 0) || core_model->GetDrawableCount() > 100000) {
       co_return Prepared::Failure({LoadErrorCode::ResourceLimit, asset.manifest.moc, "Unsupported model geometry"});
     }
-    for (int index = 0; index < native->GetParameterCount(); ++index) {
-      info.parameters.push_back({native->GetParameterId(index)->GetString().GetRawString(),
-          native->GetParameterMinimumValue(index), native->GetParameterMaximumValue(index),
-          native->GetParameterDefaultValue(index)});
+    for (int index = 0; index < core_model->GetParameterCount(); ++index) {
+      info.parameters.push_back({core_model->GetParameterId(index)->GetString().GetRawString(),
+          core_model->GetParameterMinimumValue(index), core_model->GetParameterMaximumValue(index),
+          core_model->GetParameterDefaultValue(index)});
     }
     const auto& entry = asset.files.at(asset.entry);
     cubism::CubismModelSettingJson setting(reinterpret_cast<const cubism::csmByte*>(entry.data()), entry.size());

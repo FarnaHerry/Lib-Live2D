@@ -11,7 +11,7 @@ using Mailbox = huxerui::ios::MetalTexture;
 using Renderer = cubism::Rendering::CubismRenderer_Metal;
 std::size_t surface_count = 0;
 
-class MetalSurface final : public NativeSurface {
+class MetalSurface final : public PlatformSurface {
 public:
   MetalSurface(const AssetData& asset, NativeModel& model) : model_(model), mailbox_(std::make_shared<Mailbox>(asset.info.canvas)) {
     @autoreleasepool {
@@ -102,7 +102,7 @@ private:
 
 } // namespace
 
-std::unique_ptr<NativeSurface> CreateNativeSurface(const AssetData& asset, NativeModel& model) {
+std::unique_ptr<PlatformSurface> CreatePlatformSurface(const AssetData& asset, NativeModel& model) {
   return std::make_unique<MetalSurface>(asset, model);
 }
 

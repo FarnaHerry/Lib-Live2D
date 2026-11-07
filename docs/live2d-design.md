@@ -46,7 +46,7 @@ No HuxerUI private APIs, new Runtime subclasses, node types, paint commands, or 
 | `ModelController` | One-shot motion and expression commands | Shared command identity, weakly attached to one mounted binding |
 | `ModelView` | Declarative display and persistent options | Returns a normal `View`; retains composition state internally |
 | Private `Player` / `NativeModel` | Mutable model, animation, physics, renderer, and hit testing | Owned through the mounted extension's binding |
-| Platform surface | Graphics context, model textures, render target, and publication | Owned by the player, with platform-specific context sharing |
+| Private `PlatformSurface` | Graphics context, model textures, render target, and publication | Owned by the player, with platform-specific context sharing |
 
 One asset can create multiple independent players. Ordinary recomposition preserves the player, motion time, and texture identity when both asset and controller identity remain stable. Replacing either asset or controller currently recreates the binding and player.
 
@@ -153,7 +153,7 @@ Callbacks can issue further commands. Internal locks must not prevent that reent
 
 A package consists of a `.model3.json` manifest and its referenced moc, textures, motions, expressions, physics, pose, and supported auxiliary files. Missing declared dependencies fail loading. Undeclared optional features remain absent. Audio playback is outside the loader's feature scope.
 
-The preview stores the original Mao, Haru, and Hiyori directories under `examples/preview/resources/raw/`, together with upstream license notices. HuxerUI packages them in namespace `app` and generates `app_resources.h`. The preview's loading code references those typed `app::raw` identifiers directly. Because the package root is the raw resource root, it removes the known `raw/` prefix from each logical key to populate the package-relative lookup map and passes the identifier to `UseRawResource`. This mapping does not resolve native filesystem paths. No separate sample resource header or SDK-to-preview copy step is needed. A `RawAsset` is not a directory resolver.
+The preview stores the original Mao, Haru, and Hiyori directories under `examples/preview/resources/raw/`, together with upstream license notices. HuxerUI packages them in namespace `app` and generates `app_resources.h`. The preview's loading code references those typed `app::raw` identifiers directly. Because the package root is the raw resource root, it removes the known `raw/` prefix from each logical key to populate the package-relative lookup map and passes the identifier to `UseRawResource`. This mapping does not resolve local filesystem paths. No separate sample resource header or SDK-to-preview copy step is needed. A `RawAsset` is not a directory resolver.
 
 Model textures remain original raw files for Cubism. Native decoding currently accepts PNG. Package-relative paths preserve case and UTF-8, normalize `.` and `..`, and reject absolute paths, NUL, backslashes, colons, and traversal outside the root. A filesystem adapter handling untrusted packages must separately prevent symlink escape.
 
@@ -190,7 +190,7 @@ The extension uses `FrameInfo`, returns `FrameResult`, and tracks whether time w
 
 A paused model or zero playback rate freezes motion, physics, blinking, and breathing. Playback rate must be finite and between zero and eight. Dirty configuration or geometry can still request a single render while time is frozen. Commands accepted while paused can change state without advancing time.
 
-Successful commands notify local composition state to wake the retained host. Geometry changes also request a later update. The acceptance target is no continuous frame requests for an unchanged paused instance, while idle commands and size changes still produce visible updates. Forced `UiTest::Pump()` calls alone cannot prove native idle wake behavior.
+Successful commands notify local composition state to wake the retained host. Geometry changes also request a later update. The acceptance target is no continuous frame requests for an unchanged paused instance, while idle commands and size changes still produce visible updates. Forced `UiTest::Pump()` calls alone cannot prove platform idle wake behavior.
 
 Active frame time is clamped to 0.1 seconds before applying the playback-rate multiplier. Native and Web players consume that complete scaled interval, so high playback rates are not truncated. Physics stepping uses the SDK's update behavior; independent physics-settling detection and arbitrary seek are not implemented.
 
@@ -255,7 +255,7 @@ platform/
 examples/preview/                Public-API consumer and sample resources
 ```
 
-Platform rendering implementations are independent. Native model behavior remains shared. There are no shared Apple or Android/Linux surface files. CMake selects platform sources and links the matching Core and renderer dependencies. Shader build helpers remain in `cmake/`.
+Platform rendering implementations are independent. `NativeModel`, `NativePlayer`, and `src/native/` identify the shared Cubism Native SDK implementation, distinct from the Web SDK implementation. `PlatformSurface` and `CreatePlatformSurface` select the platform graphics implementation without changing that shared model behavior. There are no shared Apple or Android/Linux surface files. CMake selects platform sources and links the matching Core and renderer dependencies. Shader build helpers remain in `cmake/`.
 
 | Platform | Rendering path | Main validation concerns |
 | --- | --- | --- |
@@ -266,7 +266,7 @@ Platform rendering implementations are independent. Native model behavior remain
 | Windows | Native D3D11 -> `windows::D3D11Texture` | Same adapter, supported formats, device loss |
 | Linux | Native OpenGL -> `linux::GlTexture` | GDK context/share groups, thread ownership, Core architecture |
 
-Web uses the separate JavaScript Core rather than recompiling Native Core into application WASM. Unsupported required capabilities, such as missing `VideoFrame`, produce an explicit failure. No fallback embeds a native view.
+Web uses the separate JavaScript Core rather than recompiling Native Core into application WASM. Unsupported required capabilities, such as missing `VideoFrame`, produce an explicit failure. No fallback embeds a platform view.
 
 Graphics operations execute serially in a valid owning context. Android's dedicated preparation sequence explicitly binds and releases EGL; an ordinary worker pool is not used for thread-affine rendering. Public headers expose no Cubism, GL, Metal, D3D, or JavaScript objects.
 

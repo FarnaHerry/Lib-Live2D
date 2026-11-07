@@ -31,7 +31,7 @@ std::shared_ptr<Device> AcquireDevice() {
   return device;
 }
 
-class D3dSurface final : public NativeSurface {
+class D3dSurface final : public PlatformSurface {
 public:
   D3dSurface(const AssetData& asset, NativeModel& model)
       : device_(AcquireDevice()), model_(model), mailbox_(std::make_shared<windows::D3D11Texture>(asset.info.canvas)) {
@@ -130,7 +130,7 @@ private:
 
 } // namespace
 
-std::unique_ptr<NativeSurface> CreateNativeSurface(const AssetData& asset, NativeModel& model) {
+std::unique_ptr<PlatformSurface> CreatePlatformSurface(const AssetData& asset, NativeModel& model) {
   return std::make_unique<D3dSurface>(asset, model);
 }
 

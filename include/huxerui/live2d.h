@@ -35,7 +35,7 @@ enum class LoadErrorCode {
   Io,
   /// A package path is invalid or escapes the package root.
   InvalidPath,
-  /// Model data or a required dependency failed parsing or validation, including Native PNG validation.
+  /// Model data or a required dependency failed parsing or validation, including PNG validation in the Cubism Native backend.
   InvalidModel,
   /// A checked file-count, byte, or model-geometry limit was exceeded.
   ResourceLimit,
@@ -81,7 +81,7 @@ enum class PlaybackErrorCode {
 /// @brief Status returned by commands that have no result payload.
 /// A code of PlaybackErrorCode::None means success. Failed results and failure events contain a non-success code.
 /// @see ModelController, ModelEvents::PlaybackFailed
-struct [[nodiscard]] PlaybackError {
+struct PlaybackError {
   /// Command status; defaults to success.
   PlaybackErrorCode code = PlaybackErrorCode::None;
   /// English failure diagnostic; empty on success. Do not parse it as a stable error identifier.
@@ -149,12 +149,12 @@ private:
 };
 
 /// @brief Positive resource bounds applied by LoadModelAsync().
-/// These bound individual loading checks, not the application's total memory or GPU usage. Native image-validation
+/// These bound individual loading checks, not the application's total memory or GPU usage. Cubism Native image-validation
 /// failures currently report InvalidModel even when caused by a texture dimension or decoded-byte bound.
 struct LoadLimits {
   /// Maximum encoded bytes read for one dependency, including the manifest; defaults to 64 MiB.
   std::size_t file_bytes = 64 * 1024 * 1024;
-  /// Maximum total encoded package bytes; also used as a separate Native decoded-image budget. Defaults to 256 MiB.
+  /// Maximum total encoded package bytes; also used as a separate Cubism Native decoded-image budget. Defaults to 256 MiB.
   std::size_t total_bytes = 256 * 1024 * 1024;
   /// Maximum number of distinct files read, including the manifest; defaults to 1,024.
   std::size_t files = 1024;
@@ -189,8 +189,8 @@ using OpenResourceAsync = std::function<Task<IoResult<AsyncInputStream>>(std::st
 /// Unrecoverable runtime exceptions may propagate when the task executes.
 ///
 /// Launch from the application's TaskScope rather than performing I/O during composition. Cancellation follows the
-/// owning task scope and suppresses result delivery; an already-running Native decode may finish before cleanup.
-/// Native textures are decoded as PNG during asset preparation and retained for later GPU upload.
+/// owning task scope and suppresses result delivery; an already-running Cubism Native decode may finish before cleanup.
+/// Textures for Cubism Native are decoded as PNG during asset preparation and retained for later GPU upload.
 /// @code{.cpp}
 /// Task<void> LoadCharacter(File entry, State<ModelAsset> asset, State<std::string> status) {
 ///   auto result = co_await LoadModelAsync(std::move(entry));
@@ -203,7 +203,7 @@ using OpenResourceAsync = std::function<Task<IoResult<AsyncInputStream>>(std::st
 /// }
 /// @endcode
 /// @see LoadLimits, ModelView
-[[nodiscard]] Task<Result<ModelAsset, LoadError>> LoadModelAsync(File entry_file, LoadLimits limits = {});
+Task<Result<ModelAsset, LoadError>> LoadModelAsync(File entry_file, LoadLimits limits = {});
 
 /// @brief Loads and validates a Cubism model3 package through application-owned raw-resource access.
 /// @param entry_resource Generated raw identifier for the .model3.json manifest, such as
@@ -219,13 +219,13 @@ using OpenResourceAsync = std::function<Task<IoResult<AsyncInputStream>>(std::st
 /// Callback exceptions and unrecoverable runtime exceptions may propagate when the task executes.
 ///
 /// Resolve resource handles during composition and capture them in the callback; do not call UseRawResource()
-/// from the callback. Task ownership, cancellation, and Native texture preparation match the File overload.
+/// from the callback. Task ownership, cancellation, and Cubism Native texture preparation match the File overload.
 /// @code{.cpp}
 /// // Inside a loading task; include the application's generated app_resources.h.
 /// auto result = co_await LoadModelAsync(app::raw::Character_Character_model3_json, open_resource);
 /// @endcode
 /// @see OpenResourceAsync, LoadLimits, ModelView
-[[nodiscard]] Task<Result<ModelAsset, LoadError>> LoadModelAsync(
+Task<Result<ModelAsset, LoadError>> LoadModelAsync(
     RawResource entry_resource, OpenResourceAsync open_resource, LoadLimits limits = {});
 
 /// @brief Opaque identity of an accepted motion playback, scoped to one ModelController identity.
@@ -300,7 +300,7 @@ public:
   /// }
   /// @endcode
   /// @see MotionOptions, ModelEvents::Ready, ModelEvents::MotionFinished
-  [[nodiscard]] Result<PlaybackId, PlaybackError> PlayMotion(
+  Result<PlaybackId, PlaybackError> PlayMotion(
       std::string_view group, int index, MotionOptions options = {}) const;
 
   /// @brief Stops motion playback for the attached instance.
@@ -309,7 +309,7 @@ public:
   /// @throws std::logic_error If called from a thread other than the mounted UI thread.
   /// An active playback reports Stopped while the binding remains live. This does not clear expressions or change
   /// ModelOptions::paused; automatic effects may still advance the model.
-  [[nodiscard]] PlaybackError StopMotion() const;
+  PlaybackError StopMotion() const;
 
   /// @brief Starts a named expression using the model's expression blending behavior.
   /// @param name Exact name from ModelInfo::expressions; consumed before the call returns.
@@ -328,14 +328,14 @@ public:
   /// }
   /// @endcode
   /// @see ClearExpression
-  [[nodiscard]] PlaybackError SetExpression(std::string_view name) const;
+  PlaybackError SetExpression(std::string_view name) const;
 
   /// @brief Stops active expression playback so subsequent evaluation uses the remaining model effects.
   /// @return PlaybackError with code == PlaybackErrorCode::None on success, including when no expression is active;
   /// otherwise a binding/backend error.
   /// @throws std::logic_error If called from a thread other than the mounted UI thread.
   /// This does not stop motion playback or remove ModelOptions::parameters and emits no MotionFinished event.
-  [[nodiscard]] PlaybackError ClearExpression() const;
+  PlaybackError ClearExpression() const;
 
   bool operator==(const ModelController&) const = default;
 
