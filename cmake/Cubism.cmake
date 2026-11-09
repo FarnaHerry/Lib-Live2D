@@ -47,6 +47,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(_live2d_core "${_live2d_core_dir}/linux/${CMAKE_SYSTEM_PROCESSOR}/libLive2DCubismCore.a")
     set(FRAMEWORK_SOURCE OpenGL)
     set(_live2d_definitions CSM_TARGET_LINUX_GL)
+    find_package(OpenGL REQUIRED)
     find_package(GLEW REQUIRED)
 endif ()
 

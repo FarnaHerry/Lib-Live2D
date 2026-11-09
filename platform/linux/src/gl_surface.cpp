@@ -68,7 +68,7 @@ std::shared_ptr<Context> AcquireContext() {
   return context;
 }
 
-class GlSurface final : public NativeSurface {
+class GlSurface final : public PlatformSurface {
 public:
   GlSurface(const AssetData& asset, NativeModel& model)
       : context_(AcquireContext()), model_(model), mailbox_(std::make_shared<Mailbox>(asset.info.canvas)) {
@@ -181,7 +181,7 @@ private:
 } // namespace
 
 
-std::unique_ptr<NativeSurface> CreateNativeSurface(const AssetData& asset, NativeModel& model) {
+std::unique_ptr<PlatformSurface> CreatePlatformSurface(const AssetData& asset, NativeModel& model) {
   return std::make_unique<GlSurface>(asset, model);
 }
 

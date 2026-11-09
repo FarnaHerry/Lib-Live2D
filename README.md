@@ -79,7 +79,7 @@ endif ()
 
 Include `<huxerui/live2d.h>` and use the `huxerui::live2d` namespace. No `Install()` call is required.
 
-The URL dependency fetches the wrapper, not the Cubism SDKs. Before configuring the application, set `LIVE2D_CUBISM_NATIVE_ROOT` for Native builds or `LIVE2D_CUBISM_WEB_ROOT` for Web builds to an extracted Cubism 5 R5 SDK. These are CMake cache variables; without overrides, they point into the fetched library's `.cache/cubism`. Web builds also require the npm build dependencies described above in the fetched library directory.
+The URL dependency fetches the wrapper, not the Cubism SDKs. Before configuring the application, set `LIVE2D_CUBISM_NATIVE_ROOT` for builds using Cubism Native or `LIVE2D_CUBISM_WEB_ROOT` for Web builds to an extracted Cubism 5 R5 SDK. These are CMake cache variables; without overrides, they point into the fetched library's `.cache/cubism`. Web builds also require the npm build dependencies described above in the fetched library directory.
 
 Shader deployment depends on the platform:
 
@@ -113,7 +113,7 @@ resources/raw/Character/
     textures/texture_00.png
 ```
 
-Use the actual names from your model's manifest. Also package and map every referenced motion, expression, physics, pose, display-info, and user-data file. Model textures must remain raw files; the Native backend decodes PNG textures.
+Use the actual names from your model's manifest. Also package and map every referenced motion, expression, physics, pose, display-info, and user-data file. Model textures must remain raw files; the Cubism Native backend decodes PNG textures.
 
 The following component assumes your generated application's resource namespace is `app` and the package uses the three paths above. Include HuxerUI's generated `app_resources.h` and pass its typed `app::raw` identifiers directly to `UseRawResource`. Add the component to a source file included in your HuxerUI application target, extend `resources` using the actual identifiers in the generated header, and call `CharacterView()` from your application's view tree. The map keys remain the package-relative paths requested by Live2D; they are distinct from the generated C++ identifiers.
 

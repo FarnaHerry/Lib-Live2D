@@ -19,10 +19,6 @@ if (HUXERUI_PROJECT_PLAN_ONLY)
     return()
 endif ()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS deployment target" FORCE)
-endif ()
-
 if (NOT HUXERUI_LIBRARY_GRAPH_ONLY)
     enable_language(CXX)
     if (WIN32)
@@ -36,13 +32,8 @@ if (NOT TARGET HuxerUI::huxerui AND NOT TARGET HuxerUI::huxerui_static)
             AND EXISTS "${HUXERUI_HOME}/include/huxerui/huxerui.h")
         set(HUXERUI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
         set(HUXERUI_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-        if (ANDROID)
-            set(HUXERUI_BUILD_SHARED ON CACHE BOOL "" FORCE)
-            set(HUXERUI_BUILD_STATIC OFF CACHE BOOL "" FORCE)
-        else ()
-            set(HUXERUI_BUILD_SHARED OFF CACHE BOOL "" FORCE)
-            set(HUXERUI_BUILD_STATIC ON CACHE BOOL "" FORCE)
-        endif ()
+        set(HUXERUI_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+        set(HUXERUI_BUILD_STATIC ON CACHE BOOL "" FORCE)
         add_subdirectory("${HUXERUI_HOME}" "${CMAKE_BINARY_DIR}/huxerui-sdk" EXCLUDE_FROM_ALL)
     elseif (HUXERUI_HOME)
         find_package(HuxerUI CONFIG REQUIRED
@@ -107,6 +98,8 @@ function(huxerui_configure_project_app target_name)
     if (APPLE AND NOT IOS AND HUXERUI_MACOS_INFO_PLIST)
         set_target_properties(${target_name} PROPERTIES
                 MACOSX_BUNDLE_INFO_PLIST "${HUXERUI_MACOS_INFO_PLIST}"
+                MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+                MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         )
     endif ()
     if (APPLE AND NOT IOS AND COMMAND huxerui_configure_macos_project_package)

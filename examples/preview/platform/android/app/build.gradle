@@ -56,12 +56,14 @@ android {
         minSdk = huxeruiMinSdk
         targetSdk = huxeruiTargetSdk
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.1.0"
 
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=${huxeruiStl}",
-                        "-DHUXERUI_HOME=${huxeruiHome.absolutePath}"
+                        "-DHUXERUI_HOME=${huxeruiHome.absolutePath}",
+                        "-DHUXERUI_OPTIMIZATION=${providers.gradleProperty('huxeruiOptimization').orElse('default').get()}",
+                        "-DHUXERUI_ENABLE_LTO=${providers.gradleProperty('huxeruiLto').orElse('OFF').get()}"
             }
         }
 

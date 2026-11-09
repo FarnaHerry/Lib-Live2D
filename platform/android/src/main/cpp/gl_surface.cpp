@@ -85,7 +85,7 @@ std::shared_ptr<Context> AcquireContext(const std::shared_ptr<void>& runtime) {
   return std::static_pointer_cast<Context>(shared);
 }
 
-class GlSurface final : public NativeSurface {
+class GlSurface final : public PlatformSurface {
 public:
   GlSurface(const AssetData& asset, NativeModel& model)
       : context_(AcquireContext(asset.runtime)), model_(model), mailbox_(std::make_shared<Mailbox>(asset.info.canvas)) {
@@ -188,7 +188,7 @@ Task<void> PrepareGlContextAsync(std::shared_ptr<void> runtime) {
   });
 }
 
-std::unique_ptr<NativeSurface> CreateNativeSurface(const AssetData& asset, NativeModel& model) {
+std::unique_ptr<PlatformSurface> CreatePlatformSurface(const AssetData& asset, NativeModel& model) {
   return std::make_unique<GlSurface>(asset, model);
 }
 

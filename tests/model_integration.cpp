@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <thread>
 
+#define LIVE2D_TEST_DISCARD(...) static_cast<void>(__VA_ARGS__)
+
 using namespace huxerui;
 using namespace huxerui::live2d;
 using namespace huxerui::testing;
@@ -51,12 +53,12 @@ Task<void> Load(Fixture* fixture) {
 
   bool rejected_empty_opener = false;
   try {
-    (void)(co_await LoadModelAsync(RawResource("test", "raw/Wanko.model3.json"), {}));
+    LIVE2D_TEST_DISCARD(co_await LoadModelAsync(RawResource("test", "raw/Wanko.model3.json"), {}));
   } catch (const std::invalid_argument&) { rejected_empty_opener = true; }
   Require(rejected_empty_opener, "Empty resource opener accepted");
   bool rejected_limits = false;
   try {
-    (void)(co_await LoadModelAsync(model_file, {.files = 0}));
+    LIVE2D_TEST_DISCARD(co_await LoadModelAsync(model_file, {.files = 0}));
   } catch (const std::invalid_argument&) { rejected_limits = true; }
   Require(rejected_limits, "Invalid file limits accepted");
 
